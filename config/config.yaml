@@ -1,7 +1,9 @@
 paths:
-    data_dir: /storage/projects/vinkle/ez_compass_imaging/data/monai_test_dataset
-    checkpoint_dir: /storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/checkpoints
-    output_dir: out
+    train_csv: /storage/projects/vinkle/ez_compass_imaging/data/csvs/train.csv
+    test_csv: /storage/projects/vinkle/ez_compass_imaging/data/csvs/test.csv
+    data_dir: /storage/projects/vinkle/ez_compass_imaging/data/cropped_data_pretty
+    checkpoint_dir: /storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/checkpoints_fcd
+    output_dir: /storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/out_fcd
 
 data:
     cache_rate: 1.0
@@ -13,7 +15,7 @@ training:
     seed: 0
     max_epochs: 600
     val_interval: 2
-    roi_size: [160, 160, 160]
+    roi_size: [160, 192, 160]
     sw_batch_size: 4
 
 model:

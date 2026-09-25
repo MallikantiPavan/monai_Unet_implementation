@@ -117,7 +117,7 @@ def train():
             plt.subplot(1, 3, 1)
             plt.title(f"image {i}")
             plt.imshow(
-                val_data["image"][0, 0, :, :, 80],
+                val_data["image"][0, 0, :, :, 40],
                 cmap="gray"
             )
 
@@ -125,7 +125,7 @@ def train():
             plt.subplot(1, 3, 2)
             plt.title(f"label {i}")
             plt.imshow(
-                val_data["label"][0, 0, :, :, 80]
+                val_data["label"][0, 0, :, :, 40]
             )
 
             # Output
@@ -134,13 +134,13 @@ def train():
             plt.imshow(
                 torch.argmax(val_outputs, dim=1)
                 .detach()
-                .cpu()[0, :, :, 80]
+                .cpu()[0, :, :, 40]
             )
 
             # Save instead of show
             plt.savefig(
                 os.path.join(
-                    "/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves",
+                    "/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves_fcd",
                     f"validation_{i}.png"
                 ),
                 bbox_inches="tight"
@@ -189,3 +189,13 @@ if __name__ == "__main__":
 # best mean dice: 0.9502 at epoch: 542
 # train completed, best_metric: 0.9502 at epoch: 542
 # Metric on original image spacing:  0.9606824517250061
+
+
+# FCD only flair metric
+
+# epoch 600 average loss: 0.0625
+# current epoch: 600 current mean dice: 0.0063
+# best mean dice: 0.0133 at epoch: 458
+# train completed, best_metric: 0.0133 at epoch: 458
+# Metric on original image spacing:  0.01254983525723219
+

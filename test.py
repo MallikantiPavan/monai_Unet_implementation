@@ -1,4 +1,4 @@
-from dataset.data import test_org_transforms, post_test_transforms
+from dataset.data import get_test_files,test_org_transforms, post_test_transforms
 
 import yaml
 import os
@@ -17,8 +17,7 @@ loader = LoadImage()
 with open("config/config.yaml", "r") as f:
     config = yaml.safe_load(f)
 def test():
-    test_images=sorted(glob.glob(os.path.join(config['paths']['data_dir'],"imagesTs", "*.nii.gz")))
-    test_data=[{"image": image_name} for image_name in test_images]
+    test_data=get_test_files()
     test_transform=test_org_transforms()
     test_org_ds=Dataset(data=test_data, transform=test_transform)
     test_org_loader=DataLoader(test_org_ds, batch_size=1, num_workers=config['data']["num_workers"])
@@ -37,19 +36,23 @@ def test():
             test_data["pred"] = sliding_window_inference(
                 test_inputs, roi_size, sw_batch_size, model
             )
-            post_test_transform = post_test_transforms(test_transform)
+            sub_id=os.path.basename(os.path.dirname(test_data['image'].meta['filename_or_obj'][0]))
+            output_name = f"{sub_id}_FLAIR_segment.nii.gz"
+            post_test_transform = post_test_transforms(test_transform,output_name)
             test_data = [post_test_transform(item) for item in decollate_batch(test_data)]
             test_output = from_engine(["pred"])(test_data)
             original_image=loader(test_output[0].meta["filename_or_obj"])
             plt.figure("check", (18, 6))
-            plt.subplot(1, 2, 1)
+            plt.subplot(1, 3, 1)
             plt.imshow(original_image[:, :, 20], cmap="gray")
-            plt.subplot(1, 2, 2)
-            plt.imshow(test_output[0].detach().cpu()[1, :, :, 20])
+            plt.subplot(1, 3, 2)
+            plt.imshow(test_data[0]['label'].detach().cpu()[0, :, :, 20])
+            plt.subplot(1, 3, 3)
+            plt.imshow(test_output[0].detach().cpu()[0, :, :, 20])
             plt.savefig(
                 os.path.join(
-                    "/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves",
-                    f"test_output_{test_output[0].meta['filename_or_obj'].split('/')[-1]}.png"
+                    f"/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves_fcd",
+                    f"test_output_{sub_id}_{test_output[0].meta['filename_or_obj'].split('/')[-1]}.png"
                 ),
                 bbox_inches="tight"
             )

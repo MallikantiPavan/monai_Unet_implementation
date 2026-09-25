@@ -16,26 +16,48 @@ from monai.transforms import (
     Spacingd,
     Invertd,
 )
-
-
+import pandas as pd
+import nibabel as nib
+import numpy as np
 
 with open("config/config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
+def read_csv(file_path):
+    base_root=config['paths']['data_dir']
+    data=[]
+    csv_file=pd.read_csv(file_path)
+    for _,row in csv_file.iterrows():
+        participant_id=row['participant_id']
+        image_path=os.path.join(base_root,participant_id,"FLAIR_brain.nii.gz")
+        label_path=os.path.join(base_root,participant_id,"FLAIR_roi.nii.gz")
+        if not os.path.exists(image_path):
+            print(f"Image file not found: {image_path}")
+            continue
+        # if  os.path.exists(label_path):
+        #     label=label_path
+        # else:
+        #     flair_shape=nib.load(image_path).shape
+        #     label=np.zeros(flair_shape,dtype=np.uint8)
+        if os.path.exists(label_path):
+            data.append({"image": image_path, "label":  label_path})
+    return data
+
+
+    
+
+        
+
 def get_data_files():
-    train_images = sorted(glob.glob(os.path.join(config['paths']['data_dir'], "imagesTr", "*.nii.gz")))
-    train_labels = sorted(glob.glob(os.path.join(config['paths']['data_dir'], "labelsTr", "*.nii.gz")))
-    data_dicts = [
-        {"image": image_name, "label": label_name}
-        for image_name, label_name in zip(train_images, train_labels)
-    ]
+    
+    data_dicts = read_csv(config['paths']['train_csv'])
     train_files, val_files = data_dicts[:-config['data']["val_size"]], data_dicts[-config['data']["val_size"]:]
     return train_files, val_files
 
 
 def get_test_files():
-    test_images = sorted(glob.glob(os.path.join(config['paths']['data_dir'], "imagesTs", "*.nii.gz")))
-    return [{"image": image} for image in test_images]
+    test_dirs=read_csv(config['paths']['test_csv'])
+    return test_dirs
 
 
 def train_transforms():
@@ -61,7 +83,7 @@ def train_transforms():
             RandCropByPosNegLabeld(
                 keys=["image", "label"],
                 label_key="label",
-                spatial_size=(96, 96, 96),
+                spatial_size=(96, 96, 80),
                 pos=1,
                 neg=1,
                 num_samples=4,
@@ -156,13 +178,15 @@ def post_transforms(transform):
     )
 
 
+
+
 def test_org_transforms():
     return Compose(
     [
-        LoadImaged(keys="image"),
-        EnsureChannelFirstd(keys="image"),
-        Orientationd(keys=["image"], axcodes="RAS"),
-        Spacingd(keys=["image"], pixdim=(1.5, 1.5, 2.0), mode="bilinear"),
+        LoadImaged(keys=["image", "label"]),
+        EnsureChannelFirstd(keys=["image", "label"]),
+        Orientationd(keys=["image", "label"], axcodes="RAS"),
+        Spacingd(keys=["image", "label"], pixdim=(1.5, 1.5, 2.0), mode=("bilinear","nearest")),
         ScaleIntensityRanged(
             keys=["image"],
             a_min=-57,
@@ -171,11 +195,11 @@ def test_org_transforms():
             b_max=1.0,
             clip=True,
         ),
-        CropForegroundd(keys=["image"], source_key="image", allow_smaller=True),
+        CropForegroundd(keys=["image", "label"], source_key="image", allow_smaller=True),
     ]
 )
 
-def post_test_transforms(transform):
+def post_test_transforms(transform,output_name):
     return Compose(
     [
         Invertd(
@@ -189,6 +213,6 @@ def post_test_transforms(transform):
             to_tensor=True,
         ),
         AsDiscreted(keys="pred", argmax=True, to_onehot=2),
-        SaveImaged(keys="pred", meta_keys="pred_meta_dict", output_dir="/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/out", output_postfix="seg", resample=False),
+        SaveImaged(keys="pred", meta_keys="pred_meta_dict", output_dir=config['paths']['output_dir'], output_postfix=f"{output_name}_FLAIR_seg", resample=False),
     ]
 )

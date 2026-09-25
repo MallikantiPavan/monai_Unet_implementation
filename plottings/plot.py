@@ -14,4 +14,4 @@ def plot_training_history(epoch_loss_values, metric_values, val_interval):
     y=metric_values
     plt.xlabel("epoch")
     plt.plot(x, y)
-    plt.savefig("/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves/training_history.png")
+    plt.savefig("/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves_fcd/training_history.png")

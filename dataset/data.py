@@ -16,6 +16,7 @@ from monai.transforms import (
     Spacingd,
     Invertd,
 )
+import random
 import pandas as pd
 import nibabel as nib
 import numpy as np
@@ -51,7 +52,10 @@ def read_csv(file_path):
 def get_data_files():
     
     data_dicts = read_csv(config['paths']['train_csv'])
-    train_files, val_files = data_dicts[:-config['data']["val_size"]], data_dicts[-config['data']["val_size"]:]
+    random.Random(config['training']['seed']).shuffle(data_dicts)
+    val_size = config['data']["val_size"]
+    train_files=data_dicts[:-val_size]
+    val_files=data_dicts[-val_size:]
     return train_files, val_files
 
 
@@ -67,29 +71,15 @@ def train_transforms():
             EnsureChannelFirstd(keys=["image", "label"]),
             ScaleIntensityRanged(
                 keys=["image"],
-                a_min=-57,
-                a_max=164,
+                a_min=0.9966772212646902,
+                a_max=551.0037992522124,
                 b_min=0.0,
                 b_max=1.0,
                 clip=True,
             ),
-            CropForegroundd(keys=["image", "label"], source_key="image", allow_smaller=True),
+            # CropForegroundd(keys=["image", "label"], source_key="image", allow_smaller=True),
             Orientationd(keys=["image", "label"], axcodes="RAS"),
-            Spacingd(
-                keys=["image", "label"],
-                pixdim=(1.5, 1.5, 2.0),
-                mode=("bilinear", "nearest"),
-            ),
-            RandCropByPosNegLabeld(
-                keys=["image", "label"],
-                label_key="label",
-                spatial_size=(96, 96, 80),
-                pos=1,
-                neg=1,
-                num_samples=4,
-                image_key="image",
-                image_threshold=0,
-            ),
+            
         ]
     )
 
@@ -102,19 +92,15 @@ def val_transforms():
             EnsureChannelFirstd(keys=["image", "label"]),
             ScaleIntensityRanged(
                 keys=["image"],
-                a_min=-57,
-                a_max=164,
+                a_min=0.9966772212646902,
+                a_max=551.0037992522124,
                 b_min=0.0,
                 b_max=1.0,
                 clip=True,
             ),
-            CropForegroundd(keys=["image", "label"], source_key="image", allow_smaller=True),
+            # CropForegroundd(keys=["image", "label"], source_key="image", allow_smaller=True),
             Orientationd(keys=["image", "label"], axcodes="RAS"),
-            Spacingd(
-                keys=["image", "label"],
-                pixdim=(1.5, 1.5, 2.0),
-                mode=("bilinear", "nearest"),
-            ),
+            
         ]
     )
 
@@ -145,16 +131,16 @@ def val_org_transforms():
                 LoadImaged(keys=["image", "label"]),
                 EnsureChannelFirstd(keys=["image", "label"]),
                 Orientationd(keys=["image"], axcodes="RAS"),
-                Spacingd(keys=["image"], pixdim=(1.5, 1.5, 2.0), mode="bilinear"),
+                Spacingd(keys=["image"], pixdim=(1.0, 1.0, 1.0), mode="bilinear"),
                 ScaleIntensityRanged(
                     keys=["image"],
-                    a_min=-57,
-                    a_max=164,
+                    a_min=0.9966772212646902,
+                    a_max=551.0037992522124,
                     b_min=0.0,
                     b_max=1.0,
                     clip=True,
                 ),
-                CropForegroundd(keys=["image"], source_key="image", allow_smaller=True),
+                # CropForegroundd(keys=["image"], source_key="image", allow_smaller=True),
             ]
         )
 
@@ -186,16 +172,7 @@ def test_org_transforms():
         LoadImaged(keys=["image", "label"]),
         EnsureChannelFirstd(keys=["image", "label"]),
         Orientationd(keys=["image", "label"], axcodes="RAS"),
-        Spacingd(keys=["image", "label"], pixdim=(1.5, 1.5, 2.0), mode=("bilinear","nearest")),
-        ScaleIntensityRanged(
-            keys=["image"],
-            a_min=-57,
-            a_max=164,
-            b_min=0.0,
-            b_max=1.0,
-            clip=True,
-        ),
-        CropForegroundd(keys=["image", "label"], source_key="image", allow_smaller=True),
+        
     ]
 )
 

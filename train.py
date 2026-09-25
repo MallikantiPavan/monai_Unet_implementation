@@ -61,9 +61,8 @@ def train():
                 for val_data in val_loader:
                     val_inputs = val_data["image"].to(device)
                     val_labels = val_data["label"].to(device)
-                    val_outputs = sliding_window_inference(
-                        val_inputs, config['training']["roi_size"], config['training']["sw_batch_size"], model
-                    )
+                    val_outputs = model(
+                        val_inputs,   )
                     val_outputs = [post_pred(item) for item in decollate_batch(val_outputs)]
                     val_labels = [post_label(item) for item in decollate_batch(val_labels)]
                     dice_metric(y_pred=val_outputs, y=val_labels)
@@ -104,11 +103,8 @@ def train():
             roi_size = config['training']["roi_size"]
             sw_batch_size = config['training']["sw_batch_size"]
 
-            val_outputs = sliding_window_inference(
+            val_outputs = model(
                 val_data["image"].to(device),
-                roi_size,
-                sw_batch_size,
-                model
             )
 
             plt.figure("check", (18, 6))
@@ -117,7 +113,7 @@ def train():
             plt.subplot(1, 3, 1)
             plt.title(f"image {i}")
             plt.imshow(
-                val_data["image"][0, 0, :, :, 40],
+                val_data["image"][0, 0, :, :, 137],
                 cmap="gray"
             )
 
@@ -125,7 +121,7 @@ def train():
             plt.subplot(1, 3, 2)
             plt.title(f"label {i}")
             plt.imshow(
-                val_data["label"][0, 0, :, :, 40]
+                val_data["label"][0, 0, :, :, 137]
             )
 
             # Output
@@ -134,7 +130,7 @@ def train():
             plt.imshow(
                 torch.argmax(val_outputs, dim=1)
                 .detach()
-                .cpu()[0, :, :, 40]
+                .cpu()[0, :, :, 137]
             )
 
             # Save instead of show
@@ -170,8 +166,8 @@ def train():
             val_inputs = val_data["image"].to(device)
             roi_size = config['training']["roi_size"]
             sw_batch_size = config['training']["sw_batch_size"]
-            val_data["pred"] = sliding_window_inference(
-                val_inputs, roi_size, sw_batch_size, model
+            val_data["pred"] = model(
+                val_inputs, 
             )
             val_data = [post_transform(item) for item in decollate_batch(val_data)]
             val_outputs, val_labels = from_engine(["pred", "label"])(val_data)
@@ -191,11 +187,19 @@ if __name__ == "__main__":
 # Metric on original image spacing:  0.9606824517250061
 
 
-# FCD only flair metric
+# FCD only flair metric patches
 
 # epoch 600 average loss: 0.0625
 # current epoch: 600 current mean dice: 0.0063
 # best mean dice: 0.0133 at epoch: 458
 # train completed, best_metric: 0.0133 at epoch: 458
 # Metric on original image spacing:  0.01254983525723219
+
+
+
+#fcd only whole mri
+
+# current epoch: 600 current mean dice: 0.0024
+# best mean dice: 0.0673 at epoch: 58
+# train completed, best_metric: 0.0673 at epoch: 58
 

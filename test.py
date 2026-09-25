@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 from monai.data import DataLoader, Dataset
 import torch
 from monai.transforms import LoadImage
+from monai.transforms import AsDiscrete, Compose
+import pandas as pd
 
 loader = LoadImage()
 
@@ -29,34 +31,48 @@ def test():
         )
     )
     model.eval()
+    post_pred=Compose([AsDiscrete(argmax=True, to_onehot=2)])
+    post_label=Compose([AsDiscrete(to_onehot=2)])
+    csv_list=[["subject_id","test_mean_dice"]]
     with torch.no_grad():
         for test_data in test_org_loader:
             test_inputs = test_data["image"].to(device)
+            test_labels = test_data["label"].to(device)
             roi_size, sw_batch_size = config['training']["roi_size"], config['training']["sw_batch_size"]
-            test_data["pred"] = sliding_window_inference(
-                test_inputs, roi_size, sw_batch_size, model
+            test_data["pred"] = model(
+                test_inputs,
             )
             sub_id=os.path.basename(os.path.dirname(test_data['image'].meta['filename_or_obj'][0]))
             output_name = f"{sub_id}_FLAIR_segment.nii.gz"
             post_test_transform = post_test_transforms(test_transform,output_name)
-            test_data = [post_test_transform(item) for item in decollate_batch(test_data)]
             test_output = from_engine(["pred"])(test_data)
+            test_pred=[post_pred(i) for i in decollate_batch(test_data["pred"])]
+            test_label=[post_label(i) for i in decollate_batch(test_labels)]
+            dice_metric(y_pred=test_pred, y=test_label)
+            subject_dice = dice_metric.aggregate().item()
+            dice_metric.reset()
+            print(f"{sub_id} Dice: {subject_dice:.4f}")
+            csv_list.append([sub_id,subject_dice])
             original_image=loader(test_output[0].meta["filename_or_obj"])
             plt.figure("check", (18, 6))
             plt.subplot(1, 3, 1)
-            plt.imshow(original_image[:, :, 20], cmap="gray")
+            plt.imshow(original_image[:, :, 135], cmap="gray")
             plt.subplot(1, 3, 2)
-            plt.imshow(test_data[0]['label'].detach().cpu()[0, :, :, 20])
+            plt.imshow(test_data['label'].detach().cpu()[0,0, :, :, 135])
             plt.subplot(1, 3, 3)
-            plt.imshow(test_output[0].detach().cpu()[0, :, :, 20])
+            plt.imshow(torch.argmax(test_data['pred'], dim=1).detach().cpu()[0, :, :, 135])
             plt.savefig(
                 os.path.join(
                     f"/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves_fcd",
-                    f"test_output_{sub_id}_{test_output[0].meta['filename_or_obj'].split('/')[-1]}.png"
+                    f"test_output_{sub_id}_{os.path.basename(test_output[0].meta['filename_or_obj'][0])}.png"
                 ),
                 bbox_inches="tight"
             )
             plt.show()
+    dice_df=pd.DataFrame(csv_list[1:],columns=csv_list[0])
+    test_mean_dice=dice_df['test_mean_dice'].mean()
+    print(f"test mean dice: {test_mean_dice:.4f}")
+    dice_df.to_csv(f"/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves_fcd/test_mean_dice.csv", index=False)
 
 if __name__== "__main__":
     test()

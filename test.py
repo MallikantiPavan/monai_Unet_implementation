@@ -43,11 +43,19 @@ def test():
                 test_inputs,
             )
             sub_id=os.path.basename(os.path.dirname(test_data['image'].meta['filename_or_obj'][0]))
-            output_name = f"{sub_id}_FLAIR_segment.nii.gz"
-            post_test_transform = post_test_transforms(test_transform,output_name)
-            test_output = from_engine(["pred"])(test_data)
-            test_pred=[post_pred(i) for i in decollate_batch(test_data["pred"])]
-            test_label=[post_label(i) for i in decollate_batch(test_labels)]
+            output_name = f"{sub_id}_FLAIR_segment"
+            test_pred=[
+                post_pred(i) for i in decollate_batch(test_data["pred"])
+            ]
+            test_label=[
+                post_label(i) for i in decollate_batch(test_labels)
+            ]
+            test_subjects=decollate_batch(test_data)
+            saved_subjects=[]
+            for subject in test_subjects:
+                subject = post_test_transforms(test_transform,output_name)(subject)
+                saved_subjects.append(subject)
+            test_output = from_engine(["pred"])(saved_subjects)
             dice_metric(y_pred=test_pred, y=test_label)
             subject_dice = dice_metric.aggregate().item()
             dice_metric.reset()

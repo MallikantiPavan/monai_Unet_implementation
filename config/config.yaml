@@ -19,5 +19,5 @@ training:
     sw_batch_size: 4
 
 model:
-    in_channels: 1
+    in_channels: 2
     out_channels: 2

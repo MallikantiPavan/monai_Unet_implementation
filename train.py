@@ -1,5 +1,6 @@
 import os
 
+from dataset import data
 import torch
 from monai.data import decollate_batch
 from monai.transforms import AsDiscrete, Compose
@@ -12,7 +13,7 @@ import logging
 
 from model.model import create_model
 from plottings.plot import plot_training_history
-from dataset.data import get_data_files, train_transforms, val_transforms,val_org_transforms,post_transforms
+from dataset.data import get_data_files, combined_transforms,post_transforms
 import matplotlib.pyplot as plt
 from monai.handlers.utils import from_engine
 
@@ -21,9 +22,9 @@ def train():
         config = yaml.safe_load(f)
     set_determinism(seed=config['training']['seed'])
     train_files, val_files = get_data_files()
-    train_ds = CacheDataset(data=train_files, transform=train_transforms(), cache_rate=1.0, num_workers=4)
+    train_ds = CacheDataset(data=train_files, transform=combined_transforms(), cache_rate=1.0, num_workers=4)
     train_loader=DataLoader(train_ds, batch_size=config['data']["batch_size"], shuffle=True, num_workers=config['data']["num_workers"])
-    val_ds = CacheDataset(data=val_files, transform=val_transforms(), cache_rate=1.0, num_workers=4)
+    val_ds = CacheDataset(data=val_files, transform=combined_transforms(), cache_rate=1.0, num_workers=4)
     val_loader=DataLoader(val_ds, batch_size=1, num_workers=config['data']["num_workers"])
 
     model, loss_function, optimizer, dice_metric, device = create_model()
@@ -149,7 +150,8 @@ def train():
 
 
 
-    val_org_transform = val_org_transforms()
+
+    val_org_transform = combined_transforms()
     val_org_ds=Dataset(data=val_files, transform=val_org_transform)
     val_org_loader=DataLoader(val_org_ds, batch_size=1, num_workers=config['data']["num_workers"])
 
@@ -203,3 +205,9 @@ if __name__ == "__main__":
 # best mean dice: 0.0673 at epoch: 58
 # train completed, best_metric: 0.0673 at epoch: 58
 
+
+#fcd on both t1w and flair only patients with lesions
+# current epoch: 600 current mean dice: 0.0132
+# best mean dice: 0.0768 at epoch: 52
+# train completed, best_metric: 0.0768 at epoch: 52
+# Metric on original image spacing:  0.0767960175871849

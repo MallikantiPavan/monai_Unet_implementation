@@ -1,5 +1,6 @@
 import glob
 import os
+from sympy import Lambda
 import yaml
 from monai.data import CacheDataset, DataLoader, Dataset
 from monai.transforms import (
@@ -15,11 +16,13 @@ from monai.transforms import (
     ScaleIntensityRanged,
     Spacingd,
     Invertd,
+    Lambda,
 )
 import random
 import pandas as pd
 import nibabel as nib
 import numpy as np
+import torch
 
 with open("config/config.yaml", "r") as f:
     config = yaml.safe_load(f)
@@ -30,10 +33,11 @@ def read_csv(file_path):
     csv_file=pd.read_csv(file_path)
     for _,row in csv_file.iterrows():
         participant_id=row['participant_id']
-        image_path=os.path.join(base_root,participant_id,"FLAIR_brain.nii.gz")
+        t1w_path=os.path.join(base_root,participant_id,"T1w_brain.nii.gz")
+        flair_path=os.path.join(base_root,participant_id,"FLAIR_brain.nii.gz")
         label_path=os.path.join(base_root,participant_id,"FLAIR_roi.nii.gz")
-        if not os.path.exists(image_path):
-            print(f"Image file not found: {image_path}")
+        if not os.path.exists(flair_path) and  os.path.exists(t1w_path):
+            print(f"Image file not found: {t1w_path} or {flair_path}. Skipping this entry.")
             continue
         # if  os.path.exists(label_path):
         #     label=label_path
@@ -41,7 +45,7 @@ def read_csv(file_path):
         #     flair_shape=nib.load(image_path).shape
         #     label=np.zeros(flair_shape,dtype=np.uint8)
         if os.path.exists(label_path):
-            data.append({"image": image_path, "label":  label_path})
+            data.append({"t1w": t1w_path,"flair": flair_path, "label":  label_path})
     return data
 
 
@@ -64,85 +68,49 @@ def get_test_files():
     return test_dirs
 
 
-def train_transforms():
+def combined_transforms():
     return Compose(
         [
-            LoadImaged(keys=["image", "label"]),
-            EnsureChannelFirstd(keys=["image", "label"]),
+            LoadImaged(keys=["flair","t1w", "label"]),
+            EnsureChannelFirstd(keys=["flair","t1w", "label"]),
+            #flair transforms
             ScaleIntensityRanged(
-                keys=["image"],
+                keys=["flair"],
                 a_min=0.9966772212646902,
                 a_max=551.0037992522124,
                 b_min=0.0,
                 b_max=1.0,
                 clip=True,
             ),
-            # CropForegroundd(keys=["image", "label"], source_key="image", allow_smaller=True),
-            Orientationd(keys=["image", "label"], axcodes="RAS"),
-            
-        ]
-    )
+            # CropForegroundd(keys=["flair", "label"], source_key="flair", allow_smaller=True),
+            Orientationd(keys=["flair","t1w", "label"], axcodes="RAS"),
 
-
-
-def val_transforms():
-    return Compose(
-        [
-            LoadImaged(keys=["image", "label"]),
-            EnsureChannelFirstd(keys=["image", "label"]),
+            #t1w transforms
             ScaleIntensityRanged(
-                keys=["image"],
-                a_min=0.9966772212646902,
-                a_max=551.0037992522124,
+                keys=["t1w"],
+                a_min=0.7421839237213135,
+                a_max=1606.20263671875,
                 b_min=0.0,
                 b_max=1.0,
                 clip=True,
             ),
-            # CropForegroundd(keys=["image", "label"], source_key="image", allow_smaller=True),
-            Orientationd(keys=["image", "label"], axcodes="RAS"),
-            
-        ]
-    )
 
+            #combine
 
-# def get_original_spacing_transforms():
-#     return Compose(
-#         [
-#             LoadImaged(keys=["image", "label"]),
-#             EnsureChannelFirstd(keys=["image", "label"]),
-#             Orientationd(keys=["image"], axcodes="RAS"),
-#             Spacingd(keys=["image"], pixdim=(1.5, 1.5, 2.0), mode="bilinear"),
-#             ScaleIntensityRanged(
-#                 keys=["image"],
-#                 a_min=-57,
-#                 a_max=164,
-#                 b_min=0.0,
-#                 b_max=1.0,
-#                 clip=True,
-#             ),
-#             CropForegroundd(keys=["image"], source_key="image", allow_smaller=True),
-#         ]
-#     )
-
-
-def val_org_transforms():
-    return Compose(
-    [
-                LoadImaged(keys=["image", "label"]),
-                EnsureChannelFirstd(keys=["image", "label"]),
-                Orientationd(keys=["image"], axcodes="RAS"),
-                Spacingd(keys=["image"], pixdim=(1.0, 1.0, 1.0), mode="bilinear"),
-                ScaleIntensityRanged(
-                    keys=["image"],
-                    a_min=0.9966772212646902,
-                    a_max=551.0037992522124,
-                    b_min=0.0,
-                    b_max=1.0,
-                    clip=True,
-                ),
-                # CropForegroundd(keys=["image"], source_key="image", allow_smaller=True),
-            ]
+            Lambda(
+            func=lambda x: {
+                "image": torch.cat([
+                    x["flair"].float(),
+                    x["t1w"].float()
+                ], dim=0),
+                "label": x["label"]
+            }
         )
+    ])
+
+
+
+
 
 def post_transforms(transform):
     return Compose(
@@ -169,9 +137,18 @@ def post_transforms(transform):
 def test_org_transforms():
     return Compose(
     [
-        LoadImaged(keys=["image", "label"]),
-        EnsureChannelFirstd(keys=["image", "label"]),
-        Orientationd(keys=["image", "label"], axcodes="RAS"),
+        LoadImaged(keys=["flair","t1w", "label"]),
+        EnsureChannelFirstd(keys=["flair","t1w", "label"]),
+        Orientationd(keys=["flair","t1w", "label"], axcodes="RAS"),
+        Lambda(
+            func=lambda x: {
+                "image": torch.cat([
+                    x["flair"].float(),
+                    x["t1w"].float()
+                ], dim=0),
+                "label": x["label"]
+            }
+        )
         
     ]
 )

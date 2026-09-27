@@ -211,3 +211,9 @@ if __name__ == "__main__":
 # best mean dice: 0.0768 at epoch: 52
 # train completed, best_metric: 0.0768 at epoch: 52
 # Metric on original image spacing:  0.0767960175871849
+
+#fcd on both t1w and flair on both healthy and patients
+# current epoch: 600 current mean dice: 0.0002
+# best mean dice: 0.2257 at epoch: 62
+# train completed, best_metric: 0.2257 at epoch: 62
+# Metric on original image spacing:  0.22571177780628204

@@ -44,11 +44,11 @@ def test():
             original_image=loader(test_output[0].meta["filename_or_obj"])
             plt.figure("check", (18, 6))
             plt.subplot(1, 3, 1)
-            plt.imshow(original_image[:, :, 20], cmap="gray")
+            plt.imshow(original_image[:, :, 135], cmap="gray")
             plt.subplot(1, 3, 2)
-            plt.imshow(test_data[0]['label'].detach().cpu()[0, :, :, 20])
+            plt.imshow(test_data[0]['label'].detach().cpu()[0, :, :, 135])
             plt.subplot(1, 3, 3)
-            plt.imshow(test_output[0].detach().cpu()[0, :, :, 20])
+            plt.imshow(test_output[0].detach().cpu()[0, :, :, 135])
             plt.savefig(
                 os.path.join(
                     f"/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves_fcd",

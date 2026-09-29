@@ -110,43 +110,45 @@ def train():
                 sw_batch_size,
                 model
             )
+            predicted_slices = torch.argmax(val_outputs, dim=1).detach().cpu()
+            image_slices = val_data["image"].detach().cpu()
+            label_slices = val_data["label"].detach().cpu()
 
-            plt.figure("check", (18, 6))
+            for x in range(image_slices.shape[-1]):
+                plt.figure("check", (18, 6))
 
-            # Image
-            plt.subplot(1, 3, 1)
-            plt.title(f"image {i}")
-            plt.imshow(
-                val_data["image"][0, 0, :, :, 40],
-                cmap="gray"
-            )
+                # Image
+                plt.subplot(1, 3, 1)
+                plt.title(f"image {i}")
+                plt.imshow(
+                    image_slices[0, 0, :, :, x],
+                    cmap="gray"
+                )
 
-            # Label
-            plt.subplot(1, 3, 2)
-            plt.title(f"label {i}")
-            plt.imshow(
-                val_data["label"][0, 0, :, :, 40]
-            )
+                # Label
+                plt.subplot(1, 3, 2)
+                plt.title(f"label {i}")
+                plt.imshow(
+                    label_slices[0, 0, :, :, x]
+                )
 
-            # Output
-            plt.subplot(1, 3, 3)
-            plt.title(f"output {i}")
-            plt.imshow(
-                torch.argmax(val_outputs, dim=1)
-                .detach()
-                .cpu()[0, :, :, 40]
-            )
+                # Output
+                plt.subplot(1, 3, 3)
+                plt.title(f"output {i}")
+                plt.imshow(
+                    predicted_slices[0, :, :, x]
+                )
 
-            # Save instead of show
-            plt.savefig(
-                os.path.join(
-                    "/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves_fcd",
-                    f"validation_{i}.png"
-                ),
-                bbox_inches="tight"
-            )
+                # Save instead of show
+                plt.savefig(
+                    os.path.join(
+                        "/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves_fcd",
+                        f"validation_{i}_slice_{x}.png"
+                    ),
+                    bbox_inches="tight"
+                )
 
-            plt.close()
+                plt.close()
 
             if i == 2:
                 break

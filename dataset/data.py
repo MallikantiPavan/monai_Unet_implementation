@@ -29,18 +29,20 @@ def read_csv(file_path):
     csv_file=pd.read_csv(file_path)
     for _,row in csv_file.iterrows():
         participant_id=row['participant_id']
-        image_path=os.path.join(base_root,participant_id,"FLAIR_brain.nii.gz")
-        label_path=os.path.join(base_root,participant_id,"FLAIR_roi.nii.gz")
-        if not os.path.exists(image_path):
-            print(f"Image file not found: {image_path}")
-            continue
-        # if  os.path.exists(label_path):
-        #     label=label_path
-        # else:
-        #     flair_shape=nib.load(image_path).shape
-        #     label=np.zeros(flair_shape,dtype=np.uint8)
-        if os.path.exists(label_path):
-            data.append({"image": image_path, "label":  label_path})
+        fcd_patients=row['group']
+        if fcd_patients=="fcd":
+            image_path=os.path.join(base_root,participant_id,"FLAIR_brain.nii.gz")
+            label_path=os.path.join(base_root,participant_id,"FLAIR_roi.nii.gz")
+            if not os.path.exists(image_path):
+                print(f"Image file not found: {image_path}")
+                continue
+            # if  os.path.exists(label_path):
+            #     label=label_path
+            # else:
+            #     flair_shape=nib.load(image_path).shape
+            #     label=np.zeros(flair_shape,dtype=np.uint8)
+            if os.path.exists(label_path):
+                data.append({"image": image_path, "label":  label_path})
     return data
 
 
@@ -67,23 +69,17 @@ def train_transforms():
             EnsureChannelFirstd(keys=["image", "label"]),
             ScaleIntensityRanged(
                 keys=["image"],
-                a_min=-57,
-                a_max=164,
+                a_min=0.9966772212646902,
+                a_max=551.0037992522124,
                 b_min=0.0,
                 b_max=1.0,
                 clip=True,
             ),
-            CropForegroundd(keys=["image", "label"], source_key="image", allow_smaller=True),
-            Orientationd(keys=["image", "label"], axcodes="RAS"),
-            Spacingd(
-                keys=["image", "label"],
-                pixdim=(1.5, 1.5, 2.0),
-                mode=("bilinear", "nearest"),
-            ),
+            
             RandCropByPosNegLabeld(
                 keys=["image", "label"],
                 label_key="label",
-                spatial_size=(96, 96, 80),
+                spatial_size=(64, 96, 64),
                 pos=1,
                 neg=1,
                 num_samples=4,
@@ -102,19 +98,13 @@ def val_transforms():
             EnsureChannelFirstd(keys=["image", "label"]),
             ScaleIntensityRanged(
                 keys=["image"],
-                a_min=-57,
-                a_max=164,
+                a_min=0.9966772212646902,
+                a_max=551.0037992522124,
                 b_min=0.0,
                 b_max=1.0,
                 clip=True,
             ),
-            CropForegroundd(keys=["image", "label"], source_key="image", allow_smaller=True),
-            Orientationd(keys=["image", "label"], axcodes="RAS"),
-            Spacingd(
-                keys=["image", "label"],
-                pixdim=(1.5, 1.5, 2.0),
-                mode=("bilinear", "nearest"),
-            ),
+            
         ]
     )
 
@@ -145,16 +135,14 @@ def val_org_transforms():
                 LoadImaged(keys=["image", "label"]),
                 EnsureChannelFirstd(keys=["image", "label"]),
                 Orientationd(keys=["image"], axcodes="RAS"),
-                Spacingd(keys=["image"], pixdim=(1.5, 1.5, 2.0), mode="bilinear"),
                 ScaleIntensityRanged(
                     keys=["image"],
-                    a_min=-57,
-                    a_max=164,
+                    a_min=0.9966772212646902,
+                    a_max=551.0037992522124,
                     b_min=0.0,
                     b_max=1.0,
                     clip=True,
                 ),
-                CropForegroundd(keys=["image"], source_key="image", allow_smaller=True),
             ]
         )
 
@@ -186,16 +174,7 @@ def test_org_transforms():
         LoadImaged(keys=["image", "label"]),
         EnsureChannelFirstd(keys=["image", "label"]),
         Orientationd(keys=["image", "label"], axcodes="RAS"),
-        Spacingd(keys=["image", "label"], pixdim=(1.5, 1.5, 2.0), mode=("bilinear","nearest")),
-        ScaleIntensityRanged(
-            keys=["image"],
-            a_min=-57,
-            a_max=164,
-            b_min=0.0,
-            b_max=1.0,
-            clip=True,
-        ),
-        CropForegroundd(keys=["image", "label"], source_key="image", allow_smaller=True),
+        
     ]
 )
 

@@ -71,7 +71,7 @@ def test():
             plt.imshow(torch.argmax(test_data['pred'], dim=1).detach().cpu()[0, :, :, 135])
             plt.savefig(
                 os.path.join(
-                    f"/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves_fcd",
+                    f"/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves_fcd_both_hc_p",
                     f"test_output_{sub_id}_{os.path.basename(test_output[0].meta['filename_or_obj'][0])}.png"
                 ),
                 bbox_inches="tight"
@@ -80,7 +80,7 @@ def test():
     dice_df=pd.DataFrame(csv_list[1:],columns=csv_list[0])
     test_mean_dice=dice_df['test_mean_dice'].mean()
     print(f"test mean dice: {test_mean_dice:.4f}")
-    dice_df.to_csv(f"/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves_fcd/test_mean_dice.csv", index=False)
+    dice_df.to_csv(f"/storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/curves_fcd_both_hc_p/test_mean_dice.csv", index=False)
 
 if __name__== "__main__":
     test()

@@ -140,6 +140,22 @@ def test_org_transforms():
         LoadImaged(keys=["flair","t1w", "label"]),
         EnsureChannelFirstd(keys=["flair","t1w", "label"]),
         Orientationd(keys=["flair","t1w", "label"], axcodes="RAS"),
+        ScaleIntensityRanged(
+            keys=["flair"],
+            a_min=0.9966772212646902,
+            a_max=551.0037992522124,
+            b_min=0.0,
+            b_max=1.0,
+            clip=True,
+        ),
+        ScaleIntensityRanged(
+            keys=["t1w"],
+            a_min=0.7421839237213135,
+            a_max=1606.20263671875,
+            b_min=0.0,
+            b_max=1.0,
+            clip=True,
+        ),
         Lambda(
             func=lambda x: {
                 "image": torch.cat([

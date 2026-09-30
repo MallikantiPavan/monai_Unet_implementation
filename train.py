@@ -201,3 +201,8 @@ if __name__ == "__main__":
 # train completed, best_metric: 0.0133 at epoch: 458
 # Metric on original image spacing:  0.01254983525723219
 
+# Only flair fcd cases with patch based training optimal patch size 64,96,64
+# current epoch: 600 current mean dice: 0.1289
+# best mean dice: 0.2044 at epoch: 370
+# train completed, best_metric: 0.2044 at epoch: 370
+# Metric on original image spacing:  0.20440302789211273

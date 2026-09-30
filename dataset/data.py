@@ -173,7 +173,15 @@ def test_org_transforms():
     [
         LoadImaged(keys=["image", "label"]),
         EnsureChannelFirstd(keys=["image", "label"]),
-        Orientationd(keys=["image", "label"], axcodes="RAS"),
+        # Orientationd(keys=["image", "label"], axcodes="RAS"),
+        ScaleIntensityRanged(
+            keys=["image"],
+            a_min=0.9966772212646902,
+            a_max=551.0037992522124,
+            b_min=0.0,
+            b_max=1.0,
+            clip=True,
+        ),
         
     ]
 )

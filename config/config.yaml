@@ -2,8 +2,8 @@ paths:
     train_csv: /storage/projects/vinkle/ez_compass_imaging/data/csvs/train.csv
     test_csv: /storage/projects/vinkle/ez_compass_imaging/data/csvs/test.csv
     data_dir: /storage/projects/vinkle/ez_compass_imaging/data/cropped_data_pretty
-    checkpoint_dir: /storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/checkpoints_fcd
-    output_dir: /storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/out_fcd
+    checkpoint_dir: /storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/checkpoints_fcd_both_hc_p
+    output_dir: /storage/projects/vinkle/ez_compass_imaging/code/monai_unet_test/out_fcd_both_hc_p
 
 data:
     cache_rate: 1.0
